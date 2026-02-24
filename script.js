@@ -1,168 +1,162 @@
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-// FULL SCREEN
-function resizeCanvas() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-}
-resizeCanvas();
-window.addEventListener("resize", resizeCanvas);
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
 
-// Images
-const spermImg = new Image();
-spermImg.src = "sperm.png";
+const startBtn = document.getElementById("startBtn");
+const restartBtn = document.getElementById("restartBtn");
+const startScreen = document.getElementById("startScreen");
+const resultScreen = document.getElementById("resultScreen");
+const finalScore = document.getElementById("finalScore");
 
-const gateTop = new Image();
-gateTop.src = "gate-top.png";
-
-const gateBottom = new Image();
-gateBottom.src = "gate-bottom.png";
-
-// Game variables
-let sperm = {
-  x: 80,
-  y: canvas.height / 2,
-  radius: 20,
-  gravity: 0.5,
-  lift: -10,
-  velocity: 0
-};
-
-let walls = [];
-let frame = 0;
-let babies = 0;
-let gameOver = false;
-let gameStarted = false;
-
-// Audio
 const bgMusic = document.getElementById("bgMusic");
 const victorySound = document.getElementById("victorySound");
 
-// Start screen
-const startScreen = document.getElementById("startScreen");
-const startBtn = document.getElementById("startBtn");
+// IMAGES
+const spermImg = new Image();
+spermImg.src = "sperm.png";
 
-// Draw sperm
-function drawSperm() {
-  ctx.drawImage(
-    spermImg,
-    sperm.x - sperm.radius,
-    sperm.y - sperm.radius,
-    sperm.radius * 2,
-    sperm.radius * 2
-  );
+const gateTopImg = new Image();
+gateTopImg.src = "gateTop.png";
+
+const gateBottomImg = new Image();
+gateBottomImg.src = "gateBottom.png";
+
+let gameStarted = false;
+let score = 0;
+
+let sperm = {};
+let gates = [];
+
+function resetGame() {
+  sperm = {
+    x: 80,
+    y: canvas.height / 2,
+    gravity: 0.5,
+    velocity: 0,
+    lift: -10
+  };
+
+  gates = [];
+  score = 0;
+  document.getElementById("score").innerText = "Babies: 0";
 }
 
-// Update sperm
-function updateSperm() {
-  sperm.velocity += sperm.gravity;
-  sperm.y += sperm.velocity;
+resetGame();
 
-  if (sperm.y > canvas.height || sperm.y < 0) {
-    endGame();
-  }
-}
+// mobile audio fix
+document.body.addEventListener("click", () => {
+  bgMusic.load();
+  victorySound.load();
+}, { once: true });
 
-// Create gates
-function createWall() {
-  let gap = canvas.height * 0.25;
-  let topHeight = Math.random() * (canvas.height - gap - 100) + 50;
+startBtn.onclick = () => {
+  startScreen.style.display = "none";
+  resultScreen.style.display = "none";
 
-  walls.push({
+  resetGame();
+  gameStarted = true;
+
+  bgMusic.currentTime = 0;
+  bgMusic.play();
+};
+
+restartBtn.onclick = () => {
+  resultScreen.style.display = "none";
+
+  resetGame();
+  gameStarted = true;
+
+  bgMusic.currentTime = 0;
+  bgMusic.play();
+};
+
+canvas.addEventListener("click", () => {
+  if (gameStarted) sperm.velocity = sperm.lift;
+});
+
+function createGate() {
+  let gap = 180;
+  let top = Math.random() * (canvas.height - gap - 100) + 50;
+
+  gates.push({
     x: canvas.width,
-    top: topHeight,
-    bottom: topHeight + gap,
-    width: canvas.width * 0.15,
+    top: top,
+    bottom: top + gap,
+    width: 80,
     passed: false
   });
 }
 
-// Draw gates
-function drawWalls() {
-  walls.forEach(wall => {
-
-    wall.x -= canvas.width * 0.005;
-
-    ctx.drawImage(gateTop, wall.x, 0, wall.width, wall.top);
-
-    ctx.drawImage(
-      gateBottom,
-      wall.x,
-      wall.bottom,
-      wall.width,
-      canvas.height - wall.bottom
-    );
-
-    // Collision
-    if (
-      sperm.x + sperm.radius > wall.x &&
-      sperm.x - sperm.radius < wall.x + wall.width &&
-      (sperm.y < wall.top || sperm.y > wall.bottom)
-    ) {
-      endGame();
-    }
-
-    // Score
-    if (!wall.passed && wall.x + wall.width < sperm.x) {
-      babies++;
-      wall.passed = true;
-      document.getElementById("score").innerText = "Babies: " + babies;
-
-      if (babies % 10 === 0) {
-        victorySound.play();
-      }
-    }
-  });
-
-  walls = walls.filter(w => w.x + w.width > 0);
-}
-
-// Jump
-function swim() {
+function update() {
   if (!gameStarted) return;
-  sperm.velocity = sperm.lift;
-  bgMusic.play();
+
+  sperm.velocity += sperm.gravity;
+  sperm.y += sperm.velocity;
+
+  if (Math.random() < 0.02) createGate();
+
+  for (let g of gates) {
+    g.x -= 3;
+
+    // collision
+    if (
+      sperm.x + 20 > g.x &&
+      sperm.x < g.x + g.width &&
+      (sperm.y < g.top || sperm.y + 20 > g.bottom)
+    ) {
+      gameOver();
+    }
+
+    if (!g.passed && g.x + g.width < sperm.x) {
+      g.passed = true;
+      score++;
+      document.getElementById("score").innerText = "Babies: " + score;
+    }
+  }
+
+  if (sperm.y > canvas.height || sperm.y < 0) gameOver();
 }
 
-// End game
-function endGame() {
-  gameOver = true;
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // sperm image
+  ctx.drawImage(spermImg, sperm.x, sperm.y, 40, 40);
+
+  // gate images
+  for (let g of gates) {
+    ctx.drawImage(gateTopImg, g.x, 0, g.width, g.top);
+    ctx.drawImage(
+      gateBottomImg,
+      g.x,
+      g.bottom,
+      g.width,
+      canvas.height - g.bottom
+    );
+  }
+}
+
+function gameOver() {
+  gameStarted = false;
+
   bgMusic.pause();
-  victorySound.play();
+  bgMusic.currentTime = 0;
+
+  resultScreen.style.display = "flex";
+  finalScore.innerText = "Final Babies: " + score;
 
   setTimeout(() => {
-    alert("Journey ended! Babies: " + babies);
-    location.reload();
+    victorySound.currentTime = 0;
+    victorySound.play();
   }, 200);
 }
 
-// Game loop
 function gameLoop() {
-  if (!gameStarted || gameOver) return;
-
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  updateSperm();
-  drawSperm();
-
-  if (frame % 90 === 0) {
-    createWall();
-  }
-
-  drawWalls();
-
-  frame++;
+  update();
+  draw();
   requestAnimationFrame(gameLoop);
 }
 
-// Start button
-startBtn.addEventListener("click", () => {
-  startScreen.style.display = "none";
-  gameStarted = true;
-  gameLoop();
-});
-
-// Controls
-document.addEventListener("click", swim);
-document.addEventListener("touchstart", swim);
+gameLoop();
