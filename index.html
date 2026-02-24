@@ -1,38 +1,31 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<meta name="theme-color" content="#000000">
-<meta name="apple-mobile-web-app-capable" content="yes">
-
-<title>Sperm Flappy Fullscreen</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Akrama Sperm Journey</title>
 <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<!-- Start Screen -->
+<div id="score">Babies: 0</div>
+
+<canvas id="game"></canvas>
+
+<!-- START SCREEN -->
 <div id="startScreen">
   <img id="startBtn" src="start.png">
 </div>
 
-  <div id="startScreen">
-  <div id="startContent">
-    <h1 id="gameTitle">Akram Sperm Journey</h1>
-    <p id="pressText">Press to Start</p>
-    <img src="start.png" id="startBtn" />
-  </div>
+<!-- RESULT SCREEN -->
+<div id="resultScreen">
+  <h2 id="finalScore"></h2>
+  <button id="restartBtn">Play Again</button>
 </div>
-  
-<!-- Score -->
-<div id="score">Babies: 0</div>
 
-<!-- Audio -->
-<audio id="bgMusic" src="bg.mp3" loop></audio>
+<!-- AUDIO -->
+<audio id="bgMusic" src="background.mp3" loop></audio>
 <audio id="victorySound" src="victory.mp3"></audio>
-
-<!-- Game -->
-<canvas id="game"></canvas>
 
 <script src="script.js"></script>
 </body>
